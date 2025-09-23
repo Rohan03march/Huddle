@@ -67,6 +67,7 @@ export const getUserByClerkId = query({
 
 export const updateProfile = mutation({
   args: {
+    username: v.string(),
     fullname: v.string(),
     bio: v.optional(v.string()),
   },
@@ -74,6 +75,7 @@ export const updateProfile = mutation({
     const currentUser = await getAuthenticatedUser(ctx);
 
     await ctx.db.patch(currentUser._id, {
+      username: args.username,
       fullname: args.fullname,
       bio: args.bio,
     });

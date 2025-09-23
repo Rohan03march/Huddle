@@ -31,13 +31,15 @@ export default function Profile() {
   );
 
   const [editedProfile, SetEditedProfile] = useState({
+    username : currentUser?.username || "",
     fullname: currentUser?.fullname || "",
-    bio: currentUser?.bio || "",
+    bio: currentUser?.bio || "",  
   });
 
   useEffect(() => {
     if (currentUser) {
       SetEditedProfile({
+        username : currentUser?.username || "",
         fullname: currentUser.fullname || "",
         bio: currentUser.bio || "",
       });
@@ -171,6 +173,17 @@ export default function Profile() {
                 <TouchableOpacity onPress={() => setIsEditModalVisible(false)}>
                   <Ionicons name="close" size={24} color={COLORS.white} />
                 </TouchableOpacity>
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Username</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editedProfile.username}
+                  onChangeText={(text) =>
+                    SetEditedProfile((prev) => ({ ...prev, username: text }))
+                  }
+                  placeholderTextColor={COLORS.gray}
+                />
               </View>
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Name</Text>

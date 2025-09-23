@@ -39,6 +39,32 @@ export const addComment = mutation({
   },
 });
 
+export const deleteComment = mutation({
+  args: { commentId: v.id("comments") },
+  handler: async (ctx, args) => {
+    const currentUser = await getAuthenticatedUser(ctx);
+
+    const comment = await ctx.db.get(args.commentId);
+    if (!comment) throw new ConvexError("Comment not found");
+
+    // Only the comment owner can delete
+    if (comment.userId !== currentUser._id) {
+      throw new ConvexError("Not authorized");
+    }
+
+    // Decrement post comment count
+    const post = await ctx.db.get(comment.postId);
+    if (post) {
+      await ctx.db.patch(comment.postId, {
+        comments: post.comments > 0 ? post.comments - 1 : 0,
+      });
+    }
+
+    await ctx.db.delete(args.commentId);
+  },
+});
+
+
 export const getComments = query({
   args: { postId: v.id("posts") },
   handler: async (ctx, args) => {

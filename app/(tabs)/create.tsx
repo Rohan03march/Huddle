@@ -4,7 +4,6 @@ import { styles } from "@/styles/create.styles";
 import { useUser } from "@clerk/clerk-expo";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "convex/react";
-import * as FileSystem from "expo-file-system";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
@@ -45,26 +44,37 @@ export default function CreateScreen() {
 
     try {
       setIsSharing(true);
+
       const uploadUrl = await generateUploadUrl();
 
-      const uploadResult = await FileSystem.uploadAsync(
-        uploadUrl,
-        selectedImage,
-        {
-          httpMethod: "POST",
-          uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-          mimeType: "image/jpeg",
-        }
-      );
+      // Detect MIME type dynamically
+      const extension = selectedImage.split(".").pop()?.toLowerCase();
+      const mimeType =
+        extension === "png"
+          ? "image/png"
+          : extension === "heic"
+          ? "image/heic"
+          : "image/jpeg";
 
-      if (uploadResult.status !== 200) throw new Error("Upload Failed");
-      const { storageId } = JSON.parse(uploadResult.body);
+      // Convert file URI to blob
+      const fileResponse = await fetch(selectedImage);
+      const blob = await fileResponse.blob();
+
+      // Upload via fetch
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "POST",
+        headers: { "Content-Type": mimeType },
+        body: blob,
+      });
+
+      if (!uploadResponse.ok) throw new Error("Upload failed");
+
+      const { storageId } = await uploadResponse.json();
 
       await createPost({ storageId, caption });
 
       setSelectedImage(null);
       setCaption("");
-
       router.push("/(tabs)");
     } catch (error) {
       console.log("Error sharing post", error);
@@ -101,8 +111,6 @@ export default function CreateScreen() {
       keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
     >
       <View style={styles.contentContainer}>
-        {/**Header */}
-
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => {
@@ -141,7 +149,6 @@ export default function CreateScreen() {
           contentOffset={{ x: 0, y: 100 }}
         >
           <View style={[styles.content, isSharing && styles.contentDisabled]}>
-            {/**Image Section */}
             <View style={styles.imageSection}>
               <Image
                 source={selectedImage}
@@ -159,7 +166,6 @@ export default function CreateScreen() {
               </TouchableOpacity>
             </View>
 
-            {/**Input Section */}
             <View style={styles.inputSection}>
               <View style={styles.captionContainer}>
                 <Image
